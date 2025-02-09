@@ -10,5 +10,5 @@ X, y = load_iris(return_X_y=True)
 
 print(X.shape)
 
-neura = Brain(input_neuratrons=10, inner_neuratron_shape=(100, 100), lr=0.0001)
-neura.fit(X, y, epochs=100000)
+neura = Brain(input_neuratrons=3, inner_neuratron_shape=(100, 100), lr=0.1)
+neura.fit(X, y, epochs=100, super_epochs=100)

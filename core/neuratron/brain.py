@@ -23,35 +23,33 @@ class Brain:
         for item in range(input_neuratrons):
             self.inputs.append(Neuratron(i, j, lr=self.lr))
 
-    def forward(self, X:np.ndarray, Y_shape:int):
+    def forward(self, X:np.ndarray, neura:Neuratron, Y_shape:int):
         i, j = self.inner_shape
         self.outputs = []
         sum_tot = np.zeros((X.shape[0], X.shape[1]))
-
-        for neura in self.inputs:
-            neur = neura(torch.from_numpy(X), X.shape[1]).detach().numpy()
-            sum_tot += neur
-
-        final_output = self.output_neuratron(torch.from_numpy(sum_tot), Y_shape)
-        return final_output, sum_tot
+        neur = neura(torch.from_numpy(X), X.shape[1])
+        
+        final_output = self.output_neuratron(neur, Y_shape)
+        return final_output
 
     def sigmoid_derivative(self, A):
         A = A.detach().numpy()
         return A * (1-A)
 
-    def fit(self, X:np.ndarray, Y:np.ndarray, epochs:int):
+    def fit(self, X:np.ndarray, Y:np.ndarray, super_epochs:int, epochs:int):
         Y_shape = np.max(Y)
 
-        for i in range(epochs):
-            final_output, sum_tot = self.forward(X, Y_shape+1)
-            loss = self.output_neuratron.fit(final_output, Y=Y, lr=self.lr, criterion=self.criterion)       
-            
-            gradientW = self.output_neuratron.using.weight.grad
-            new_gradientW = np.dot(self.sigmoid_derivative(final_output), np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
-
-
+        for i in range(super_epochs):
+            loss = None
             for neura in self.inputs:
-                neura.using.weight.data = torch.from_numpy(np.dot(X.T, new_gradientW))
-                neura.using.bias.data = torch.from_numpy(new_gradientW)
+                for j in range(epochs):            
+                    final_output = self.forward(X, neura, Y_shape+1)
+                    loss = self.output_neuratron.fit(final_output, Y=Y, lr=self.lr, criterion=self.criterion)       
+                    
+                    gradientW = self.output_neuratron.using.weight.grad
+                    new_gradientW = np.dot(self.sigmoid_derivative(final_output), np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
+                    
+                    neura.using.weight.data = torch.from_numpy(np.dot(X.T, new_gradientW))
+                    neura.using.bias.data = torch.from_numpy(new_gradientW)
 
             print(f'EPOCH: {i}; LOSS: {loss}')
