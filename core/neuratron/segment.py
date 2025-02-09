@@ -1,56 +1,39 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
 import numpy as np
-from scipy.special import expit
 
-class Neuratron:
-    def __init__(self, i:int, j:int) -> None:
-        # Generate Bias and structure (Weights)
-        self.structure = self.generate_brain(i, j)
-        self.bias = self.generate_brain(i, j)
+class Neuratron(nn.Module):
+    def __init__(self, i:int, j:int, lr:float, is_input:bool=True):
+        #init function
+        super(Neuratron, self).__init__()
+        self.generate_brain(i, j)
+        self.sigmoid = nn.Sigmoid()
+        self.optimizer = optim.SGD(self.parameters(), lr=lr)
+        self.is_input = is_input
 
+    def generate_brain(self, i:int, j:int):
+        #function to generate brain
+        self.using = nn.Linear(i, j)
+        self.total = nn.Linear(i, j)
+        
+    def forward(self, X, Y_shape:int) -> np.ndarray:
+        self.using.weight.data = torch.from_numpy(self.total.weight.detach().numpy()[:Y_shape, :X.shape[1]])
+        self.using.bias.data = torch.from_numpy(self.total.bias.detach().numpy()[:Y_shape])
 
-    def generate_brain(self, i:int, j:int) -> np.ndarray:
-        # Generator method
-        struct = np.random.rand(i, j)
+        return self.sigmoid(self.using(X.float()))
 
-        if i < j:
-            for i_line in range(i):
-                struct[i_line, i_line] = 0
+    def fit(self, X:np.ndarray, Y:np.ndarray=None, lr:float=0.0001, criterion=None):
+        Y = torch.from_numpy(Y).float()
 
-        else:
-            for j_col in range(j):
-                struct[j_col, j_col] = 0
+        if not self.is_input:       
+            self.optimizer.zero_grad()
+        
+            loss = criterion(X.unsqueeze(0), Y.unsqueeze(0)) if len(Y.shape) == 0 else criterion(X, Y.view(-1).long())
+            loss.backward()
+        
+        self.optimizer.step()
+        self.total.weight.data[:self.using.weight.shape[0], :self.using.weight.shape[1]] = self.using.weight
+        self.total.bias.data[:self.using.bias.shape[0]] = self.using.bias
 
-        return struct
-
-    def process_anterior_data(self, X:np.ndarray) -> np.ndarray:
-        # Processing method of the Neuratron Segment
-        struct = self.structure[:X.shape[1], :X.shape[0]]
-        bias = self.bias[:X.shape[0], :X.shape[0]]
-
-        self.Activation = expit(np.dot(X, struct) + bias)
-        return self.Activation, struct, bias
-
-
-    def backpropagation(self, Y:np.ndarray, struct:np.ndarray, bias:np.ndarray, learning_rate:float) -> None:
-        # Backpropagation function
-        error = self.Activation - Y
-        delta1 = self.sigmoidal_deriv(error)
-
-        struct -= (delta1.dot(struct.T) * learning_rate).T
-        bias -= delta1 * learning_rate
-
-        self.structure[:struct.shape[0], :struct.shape[1]] = struct
-        self.bias[:bias.shape[0], :bias.shape[1]] = bias
-
-    def learn(self, X:np.ndarray, Y:np.ndarray, epochs:int):
-        for i in range(epochs):
-            activation, struct, bias = self.process_anterior_data(X)
-            self.backpropagation(Y, struct, bias, learning_rate=0.0001)
-
-            print(f"Epoch {i}")
-
-
-    @staticmethod
-    def sigmoidal_deriv(X:np.ndarray):
-        # Sigmoidal function derivative
-        return expit(X) * expit(1 - X)
+        return loss
