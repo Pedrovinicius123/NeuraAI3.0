@@ -3,12 +3,14 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
+
 class Neuratron(nn.Module):
     def __init__(self, i:int, j:int, lr:float, is_input:bool=True):
         #init function
         super(Neuratron, self).__init__()
         self.generate_brain(i, j)
         self.sigmoid = nn.Sigmoid()
+
         self.optimizer = optim.SGD(self.parameters(), lr=lr)
         self.is_input = is_input
 
@@ -29,7 +31,7 @@ class Neuratron(nn.Module):
         if not self.is_input:       
             self.optimizer.zero_grad()
         
-            loss = criterion(X.unsqueeze(0), Y.unsqueeze(0)) if len(Y.shape) == 0 else criterion(X, Y.view(-1).long())
+            loss = criterion(X.unsqueeze(0), Y.unsqueeze(0)) if len(Y.shape) == 0 else criterion(X, Y)
             loss.backward()
         
         self.optimizer.step()

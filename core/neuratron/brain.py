@@ -1,4 +1,5 @@
 from neuratron.segment import Neuratron
+from alive_progress import alive_bar
 
 import numpy as np
 import torch
@@ -14,7 +15,7 @@ class Brain:
         self.develop_brain(input_neuratrons)
 
         self.output_neuratron = Neuratron(self.inner_shape[0], self.inner_shape[1], lr=lr,  is_input=False)        
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.MSELoss()
         
 
     def develop_brain(self, input_neuratrons:int):
@@ -40,18 +41,22 @@ class Brain:
         return A * (1-A)
 
     def fit(self, X:np.ndarray, Y:np.ndarray, epochs:int):
-        Y_shape = np.max(Y)
+        Y_shape = Y.shape[1]
+        final_loss = None
 
-        for i in range(epochs):
-            final_output, sum_tot = self.forward(X, Y_shape+1)
-            loss = self.output_neuratron.fit(final_output, Y=Y, lr=self.lr, criterion=self.criterion)       
-            
-            gradientW = self.output_neuratron.using.weight.grad
-            new_gradientW = np.dot(self.sigmoid_derivative(final_output), np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
+        with alive_bar(epochs) as bar:
+            for i in range(epochs):
+                final_output, sum_tot = self.forward(X, Y_shape)
+                final_loss = self.output_neuratron.fit(final_output, Y=Y, lr=self.lr, criterion=self.criterion)       
+                
+                gradientW = self.output_neuratron.using.weight.grad
+                new_gradientW = np.dot(self.sigmoid_derivative(final_output), np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
 
 
-            for neura in self.inputs:
-                neura.using.weight.data = torch.from_numpy(np.dot(X.T, new_gradientW))
-                neura.using.bias.data = torch.from_numpy(new_gradientW)
+                for neura in self.inputs:
+                    neura.using.weight.data = torch.from_numpy(np.dot(X.T, new_gradientW))
+                    neura.using.bias.data = torch.from_numpy(new_gradientW)
 
-            print(f'EPOCH: {i}; LOSS: {loss}')
+                bar()
+
+        print(f'LOSS: {final_loss}')
