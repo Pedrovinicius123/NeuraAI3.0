@@ -50,7 +50,7 @@ class Brain:
                 final_loss = self.output_neuratron.fit(final_output, Y=Y, lr=self.lr, criterion=self.criterion)       
                 
                 gradientW = self.output_neuratron.using.weight.grad
-                new_gradientW = np.dot(self.sigmoid_derivative(final_output), np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
+                new_gradientW = np.dot(sum_tot, np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
 
 
                 for neura in self.inputs:

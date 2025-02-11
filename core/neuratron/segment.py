@@ -9,7 +9,6 @@ class Neuratron(nn.Module):
         #init function
         super(Neuratron, self).__init__()
         self.generate_brain(i, j)
-        self.sigmoid = nn.Sigmoid()
 
         self.optimizer = optim.SGD(self.parameters(), lr=lr)
         self.is_input = is_input
@@ -23,7 +22,7 @@ class Neuratron(nn.Module):
         self.using.weight.data = torch.from_numpy(self.total.weight.detach().numpy()[:Y_shape, :X.shape[1]])
         self.using.bias.data = torch.from_numpy(self.total.bias.detach().numpy()[:Y_shape])
 
-        return self.sigmoid(self.using(X.float()))
+        return self.using(X.float())
 
     def fit(self, X:np.ndarray, Y:np.ndarray=None, lr:float=0.0001, criterion=None):
         Y = torch.from_numpy(Y).float()
