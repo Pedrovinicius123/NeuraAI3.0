@@ -15,7 +15,7 @@ class Brain:
         self.develop_brain(input_neuratrons)
 
         self.output_neuratron = Neuratron(self.inner_shape[0], self.inner_shape[1], lr=lr,  is_input=False)        
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.CrossEntropyLoss()
         
 
     def develop_brain(self, input_neuratrons:int):
@@ -50,8 +50,7 @@ class Brain:
                 final_loss = self.output_neuratron.fit(final_output, Y=Y, lr=self.lr, criterion=self.criterion)       
                 
                 gradientW = self.output_neuratron.using.weight.grad
-                new_gradientW = np.dot(sum_tot, np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
-
+                new_gradientW = np.dot(self.sigmoid_derivative(final_output), np.dot(gradientW.detach().numpy(), self.output_neuratron.using.weight.detach().numpy().T))
 
                 for neura in self.inputs:
                     neura.using.weight.data = torch.from_numpy(np.dot(X.T, new_gradientW))

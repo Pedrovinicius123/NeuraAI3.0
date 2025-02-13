@@ -1,0 +1,6 @@
+[submodule "core/core/game"]
+	path = core/core/game
+	url = https://github.com/Pedrovinicius123/MySnakeGame.git
+[submodule "core/game"]
+	path = core/game
+	url = https://github.com/Pedrovinicius123/MySnakeGame.git
